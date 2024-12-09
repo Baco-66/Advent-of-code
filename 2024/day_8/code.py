@@ -77,10 +77,10 @@ def find_loops(map, size, position, obstacle):
 
 def main():
     # Example usage
-    file_path = '2024/day_7/test_data.txt'
-    #file_path = '2024/day_7/data.txt' 
+    file_path = '2024/day_8/test_data.txt'
+    #file_path = '2024/day_8/data.txt' 
 
-    print("Advent of code day 7!")
+    print("Advent of code day 8!")
     print("For part one type number 1")
     print("For part two type number 2")
 
