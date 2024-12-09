@@ -7,3 +7,5 @@ def good(d, s=0):
     return True
 
 for s in 0, 1: print(sum(good(d, s) or good(d[::-1], s) for d in data))
+
+# Had some issues in my solution, so i used this solution from redit to identify where i made a mistake

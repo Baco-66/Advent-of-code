@@ -58,7 +58,7 @@ def process_line_with_regex(line, register=True):
     return ''.join(output),register
 
 def main():
-    print("Advent of code day 1!")
+    print("Advent of code day 3!")
     print("For part one type number 1")
     print("For part two type number 2")
 
@@ -66,16 +66,17 @@ def main():
     query = input("What is the query? ")
     print("")
 
+    data = parse_data_from_file_2('2024/day_3/data.txt')
+
     match query:
         case "1":
-            data = parse_data_from_file('data.txt')
 
             result = 0
             for (right, left) in data:
                 result += (int(right)*int(left))
             print(result)
         case "2":
-            data = parse_data_from_file_2('data.txt')
+
 
             result = 0
             for (right, left) in data:

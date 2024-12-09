@@ -77,46 +77,28 @@ def find_loops(map, size, position, obstacle):
 
 def main():
     # Example usage
-    file_path = 'test_data.txt' 
-    file_path = 'data.txt' 
+    file_path = '2024/day_7/test_data.txt'
+    #file_path = '2024/day_7/data.txt' 
 
-    print("Advent of code day 1!")
+    print("Advent of code day 7!")
     print("For part one type number 1")
     print("For part two type number 2")
 
     # Ask the user for the query to do
     query = input("What is the query?\n")
 
-    map = parse_data_from_file(file_path)
-    size = (len(map), len(map[0]))
-
-    position = find_positions_in_matrix(map, "^")[0]
-    patrol(map, size, position.copy())
-    map[position[0]][position[1]]= "^"
-
 
 
     match query:
         case "1":
-            print("Result is ",len(find_positions_in_matrix(map, "X")))
+            pass
         case "2":
-            path = find_positions_in_matrix(map, "X")
-            result = 0
-            for i, obstacle in enumerate(path):
-                print("Done ", i, "with obstacle", obstacle)
-                map[obstacle[0]][obstacle[1]]= "#"
-                if find_loops(map, size, position.copy(), obstacle.copy()):
-                    result += 1
-                map[obstacle[0]][obstacle[1]]= "."
-
-            print("There are",result, "blocks that create a loop!")
+            pass
         case _:
             print("Invalid option!")
 
-
     print("That's all folks!")
     return 0
-
 
 if __name__ == '__main__':
     main()

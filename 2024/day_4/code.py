@@ -84,9 +84,9 @@ def find_positions_in_matrix(matrix, search):
 
 def main():
     # Example usage
-    file_path = 'data.txt' 
+    file_path = '2024/day_4/data.txt' 
 
-    print("Advent of code day 1!")
+    print("Advent of code day 4!")
     print("For part one type number 1")
     print("For part two type number 2")
 

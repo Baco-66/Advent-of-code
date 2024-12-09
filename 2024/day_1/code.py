@@ -13,7 +13,7 @@ def read_data_from_file(filename):
 
 def main():
     # Read the data from the file and put the information into two different lists
-    left, right = read_data_from_file('data.txt')
+    left, right = read_data_from_file('2024/day_1/data.txt')
 
     # print("List with right values: ", right, end="\n")
 

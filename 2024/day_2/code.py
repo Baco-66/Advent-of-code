@@ -110,10 +110,10 @@ def safety_test_with_dampner(line: list, retry: bool=False):
 
 def main():
     # Read the data from the file and put the information into two different lists
-    data = read_data_from_file('data.txt')
+    data = read_data_from_file('2024/day_2/data.txt')
     #print(data)
 
-    print("Advent of code day 1!")
+    print("Advent of code day 2!")
     print("For part one type number 1")
     print("For part two type number 2")
 

@@ -62,10 +62,10 @@ def correct_updates(rules, pages):
 
 def main():
     # Example usage
-    file_path = 'test_data.txt' 
-    file_path = 'data.txt' 
+    file_path = '2024/day_5/test_data.txt' 
+    file_path = '2024/day_5/data.txt' 
 
-    print("Advent of code day 1!")
+    print("Advent of code day 5!")
     print("For part one type number 1")
     print("For part two type number 2")
 
