@@ -47,7 +47,7 @@ def calculate_checksum(data):
             result += index * int(char)
     return result
 
-@profile
+#@profile
 def move_file(data, id):
     # id = [start_index, end_index, value_at_end_index]  
     free = 0
@@ -124,8 +124,8 @@ def main():
     print("That's all folks!")
     return 0
 
-#if __name__ == '__main__':
-    #main()
+if __name__ == '__main__':
+    main()
 #    cProfile.run('main()')
 
-main()
+#main()
