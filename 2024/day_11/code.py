@@ -116,7 +116,7 @@ def main():
         case "2":
             stones = reduce_numbers(stones)
             for _ in range(75): # 75
-                stones = blink_reduced_redunduncy(stones)
+                stones = blink_reduced_redunduncy(stones) # IF i needded this faster i should just use a dict
                 stones = merge_counts(stones)
             print(stones)
             result = 0
