@@ -7,7 +7,8 @@ Currently, it includes solutions for the 2024 edition. Future updates may includ
 Each folder corresponds to a specific year of Advent of Code, starting with 2024. Solutions are organized by day.
 
 ## Languages
-- Python (main)
+- Python 
 - C
+- Go
 
 Feel free to explore and suggest improvements!
