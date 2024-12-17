@@ -4,10 +4,42 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
-func parse_data(file_path string) ([][]string, error) {
+type Entry struct {
+	Point  Point
+	Vector Point
+}
+
+type Point struct {
+	X, Y int
+}
+
+type ErrParseLine struct {
+	Line string
+}
+
+func (e ErrParseLine) Error() string {
+	return fmt.Sprintf("Failed to find data line: %s", e.Line)
+}
+
+// Function to parse a line with X and Y values
+func parseLine(line string, regex *regexp.Regexp) (Entry, error) {
+	var entry Entry
+	matches := regex.FindStringSubmatch(line)
+	if len(matches) == 5 {
+		fmt.Sscanf(matches[1], "%d", &entry.Point.X)
+		fmt.Sscanf(matches[2], "%d", &entry.Point.Y)
+		fmt.Sscanf(matches[3], "%d", &entry.Vector.X)
+		fmt.Sscanf(matches[4], "%d", &entry.Vector.Y)
+		return entry, nil
+	}
+	return entry, ErrParseLine{line}
+}
+
+func parse_data(file_path string) ([]Entry, error) {
 	// Open the file
 	file, err := os.Open(file_path)
 	if err != nil {
@@ -16,164 +48,178 @@ func parse_data(file_path string) ([][]string, error) {
 	}
 	defer file.Close() // Ensure the file is closed when the function ends
 
-	// Initialize a matrix
-	var matrix [][]string
+	// Regular expressions for parsing
+	regex := regexp.MustCompile(`p=(\d+),(\d+) v=(-?\d+),(-?\d+)`)
 
-	// Create a scanner to read the file line by line
+	// Slice to store all entries
+	var entries []Entry
+
+	// Read the file line by line
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		// Read a line
-		line := scanner.Text()
-
-		// Split the line into elements (adjust delimiter if needed)
-		elements := strings.Split(line, "") // Splits into individual characters
-
-		// Append the slice to the matrix
-		matrix = append(matrix, elements)
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			// Process 3 lines into an entry
+			entry, err := parseLine(line, regex)
+			if err != nil {
+				return nil, err // Return error if file cannot be opened
+			}
+			entries = append(entries, entry)
+		}
 	}
-
-	// Check for scanner errors
-	if err := scanner.Err(); err != nil {
-		return nil, err // Return error if reading fails
-	}
-
-	return matrix, nil
+	return entries, nil
 }
 
-func find_plots(x, y int, matrix [][]string, visited map[[2]int]bool) (int, int) {
-	// If the cell is already visited, skip it
-	if visited[[2]int{x, y}] {
-		return 0, 0
+func add_vector_to_point(x, y, dx, dy, w, h int) (int, int) {
+	x += dx
+	if x >= w {
+		x -= w
+	} else if x < 0 {
+		x += w
+	}
+	y += dy
+	if y >= h {
+		y -= h
+	} else if y < 0 {
+		y += h
+	}
+	return x, y
+}
+
+func (e *Entry) patrol(width, high, seconds int) {
+	for range seconds {
+		e.Point.X, e.Point.Y = add_vector_to_point(e.Point.X, e.Point.Y, e.Vector.X, e.Vector.Y, width, high)
+	}
+}
+
+func (e Entry) find_quadrant(x_limit, y_limit int) (quadrant int) {
+	if e.Point.X < x_limit {
+		if e.Point.Y < y_limit {
+			quadrant = 1
+		} else if e.Point.Y > y_limit {
+			quadrant = 3
+		}
+	} else if e.Point.X > x_limit {
+		if e.Point.Y < y_limit {
+			quadrant = 2
+		} else if e.Point.Y > y_limit {
+			quadrant = 4
+		}
+	}
+	return
+}
+
+func calculate_safety(entries []Entry, width, hight int) int {
+	x_limit := width / 2
+	y_limit := hight / 2
+	var result []int = make([]int, 4, 4)
+
+	for _, entry := range entries {
+		i := entry.find_quadrant(x_limit, y_limit)
+		if i != 0 {
+			result[i-1] += 1
+		}
+		//fmt.Println(result, x_limit, y_limit, entry.Point.X, entry.Point.Y)
+	}
+	return result[0] * result[1] * result[2] * result[3]
+}
+
+// Function to generate and print the grid with point counts
+func printPointMap(entries []Entry, width, height int) {
+	// Create a 2D grid initialized with zeros
+	grid := make([][]int, height)
+	for i := range grid {
+		grid[i] = make([]int, width)
 	}
 
-	// Mark the current cell as visited
-	visited[[2]int{x, y}] = true
-
-	// Initial area and perimeter
-	var area, perimeter int = 1, 0
-	type_of_plot := matrix[x][y]
-
-	// Define the directions for neighbors (up, left, down, right)
-	directions := [][2]int{
-		{-1, 0}, // up
-		{0, -1}, // left
-		{1, 0},  // down
-		{0, 1},  // right
+	// Populate the grid with point counts
+	for _, entry := range entries {
+		x, y := entry.Point.X, entry.Point.Y
+		if x >= 0 && x < width && y >= 0 && y < height { // Ensure points are within bounds
+			grid[y][x]++
+		}
 	}
 
-	// Check all 4 neighbors
-	for _, dir := range directions {
-		newX, newY := x+dir[0], y+dir[1]
-
-		// Check if the new position is within bounds
-		if newX >= 0 && newX < len(matrix) && newY >= 0 && newY < len(matrix[0]) {
-			if matrix[newX][newY] == type_of_plot {
-				// Recursively call find_plots for the neighbor
-				res_area, res_perimeter := find_plots(newX, newY, matrix, visited)
-				area += res_area
-				perimeter += res_perimeter
+	// Print the grid
+	for _, row := range grid {
+		for _, count := range row {
+			if count == 0 {
+				fmt.Print(".")
 			} else {
-				// Increase the perimeter for non-matching plot
-				perimeter++
+				fmt.Print(count)
 			}
-		} else {
-			// Increase perimeter for out-of-bounds
-			perimeter++
 		}
+		fmt.Println()
 	}
-
-	return area, perimeter
+	fmt.Println()
 }
 
-// Helper function to check and count angles
-func checkAngle(matrix [][]string, x, y, dx, dy int, type_of_plot string) int {
+// Function to check if a bunch of points are connected together (based on a threshold)
+func arePointsTogether(entries []Entry, threshold int) bool {
+	if len(entries) == 0 {
+		return false
+	}
 
-	angles := 0
-	newX, newY := x+dx, y+dy
+	// Define all 8 possible directions: up, down, left, right, and diagonals
+	directions := []Point{
+		{-1, -1}, {-1, 0}, {-1, 1}, // Up-left, Up, Up-right
+		{0, -1}, {0, 1}, // Left, Right
+		{1, -1}, {1, 0}, {1, 1}, // Down-left, Down, Down-right
+	}
 
-	if newX >= 0 && newX < len(matrix) {
-		if newY >= 0 && newY < len(matrix[0]) { // Case 1: Both newX and newY are valid
-			if matrix[newX][y] == type_of_plot && matrix[x][newY] == type_of_plot && matrix[newX][newY] != type_of_plot {
-				angles++
-			} else if matrix[newX][y] != type_of_plot && matrix[x][newY] != type_of_plot {
-				angles++
+	// Convert entries into a point map for quick lookup
+	pointMap := make(map[Point]bool)
+	for _, e := range entries {
+		pointMap[e.Point] = true
+	}
+
+	// Counter for points that have neighbors
+	connectedCount := 0
+
+	// Iterate through all points and check for neighbors
+	for _, entry := range entries {
+		hasNeighbor := false
+		// Check all 8 directions for neighbors
+		for _, d := range directions {
+			neighbor := Point{entry.Point.X + d.X, entry.Point.Y + d.Y}
+			if pointMap[neighbor] { // If a neighboring point exists
+				hasNeighbor = true
+				break
 			}
-		} else { // Case 2: Only newX is valid (newY is out of bounds)
-			if matrix[newX][y] != type_of_plot {
-				angles++
-			}
 		}
-	} else if newY >= 0 && newY < len(matrix[0]) { // Case 3: Only newY is valid (newX is out of bounds)
-		if matrix[x][newY] != type_of_plot {
-			angles++
-		}
-	} else { // Case 4: Both newX and newY are out of bounds
-		angles++
-	}
-
-	return angles
-}
-
-func find_plots2(x, y int, matrix [][]string, visited map[[2]int]bool) (int, int) {
-	// If the cell is already visited, skip it
-	if visited[[2]int{x, y}] {
-		return 0, 0
-	}
-
-	// Mark the current cell as visited
-	visited[[2]int{x, y}] = true
-
-	// Initial area and perimeter
-	var area, angles int = 1, 0
-	type_of_plot := matrix[x][y]
-
-	// Define the directions for neighbors (up, left, down, right)
-	directions := [][2]int{
-		{-1, 0}, // up
-		{0, -1}, // left
-		{1, 0},  // down
-		{0, 1},  // right
-	}
-
-	angles += checkAngle(matrix, x, y, -1, -1, type_of_plot) // Top-left
-	angles += checkAngle(matrix, x, y, 1, -1, type_of_plot)  // Bottom-left
-	angles += checkAngle(matrix, x, y, 1, 1, type_of_plot)   // Bottom-right
-	angles += checkAngle(matrix, x, y, -1, 1, type_of_plot)  // Top-right
-
-	// Check all 4 neighbors
-	for _, dir := range directions {
-		newX, newY := x+dir[0], y+dir[1]
-
-		// Check if the new position is within bounds
-		if newX >= 0 && newX < len(matrix) && newY >= 0 && newY < len(matrix[0]) && matrix[newX][newY] == type_of_plot {
-			// Recursively call find_plots for the neighbor
-			res_area, res_angles := find_plots2(newX, newY, matrix, visited)
-			area += res_area
-			angles += res_angles
+		if hasNeighbor {
+			connectedCount++
 		}
 	}
 
-	return area, angles
+	// Print connected points for debugging
+	fmt.Printf("Connected Points: %d\n", connectedCount)
+
+	// Compare the connected points with the threshold
+	return connectedCount >= threshold
 }
 
 func main() {
 	//file_path := "test_data.txt"
-	file_path := "data.txt"
+	//var w, h int = 11, 7
 
-	// Use the function to read the file
-	region, err := parse_data(file_path)
+	file_path := "data.txt"
+	var w, h int = 101, 103
+
+	entries, err := parse_data(file_path)
+
+	// Check for errors during scanning
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
 	result := 0
-	visited := make(map[[2]int]bool)
 
 	// Prompt the user
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Advent of code day 12!")
+	fmt.Println("Advent of code day 14!")
 	fmt.Println("For part one type number 1")
 	fmt.Println("For part one type number 2")
 	fmt.Print("What is the query?\n")
@@ -185,22 +231,24 @@ func main() {
 	// Look up and run the chosen function
 	switch input {
 	case "1":
-		// Process the matrix
-		for i, row := range region {
-			for j := range row {
-				area, perimeter := find_plots(i, j, region, visited)
-				result += area * perimeter
-			}
+		//printPointMap(entries, w, h)
+		for i := range entries {
+			entries[i].patrol(w, h, 1)
 		}
-	case "2":
-		// Process the matrix
-		for i, row := range region {
-			for j := range row {
-				area, perimeter := find_plots2(i, j, region, visited)
-				result += area * perimeter
-				/*if area != 0 {
-					fmt.Println("Area:", area, "Sides:", perimeter)
-				}*/
+		result = calculate_safety(entries, w, h)
+	case "2": // THIS IS SO DUMB; WHAT A DUMB CHALLANGE
+		time := 0
+		threshold := 300
+		for {
+			for i := range entries {
+				entries[i].patrol(w, h, 1)
+			}
+			time++
+			//fmt.Println("Time ", time)
+			if arePointsTogether(entries, threshold) {
+				fmt.Println("Time ", time)
+				printPointMap(entries, w, h)
+				return
 			}
 		}
 
