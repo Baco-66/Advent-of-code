@@ -231,7 +231,6 @@ func main() {
 	// Look up and run the chosen function
 	switch input {
 	case "1":
-		//printPointMap(entries, w, h)
 		for i := range entries {
 			entries[i].patrol(w, h, 1)
 		}
@@ -244,7 +243,6 @@ func main() {
 				entries[i].patrol(w, h, 1)
 			}
 			time++
-			//fmt.Println("Time ", time)
 			if arePointsTogether(entries, threshold) {
 				fmt.Println("Time ", time)
 				printPointMap(entries, w, h)
