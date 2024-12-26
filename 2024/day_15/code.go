@@ -330,32 +330,6 @@ func moveRobotBig(matrix [][]rune, direction rune) bool {
 	return true
 }
 
-// Write the matrix to a file
-func writeMatrixToFile(filename string, matrix [][]rune) error {
-	// Open the file in append mode, create it if it doesn't exist
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// Write the matrix row by row
-	for _, row := range matrix {
-		_, err := file.WriteString(string(row) + "\n")
-		if err != nil {
-			return err
-		}
-	}
-
-	// Add a separator (optional)
-	_, err = file.WriteString("\n")
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func main() {
 	//file_path := "test_data_small.txt"
 	//file_path := "test_data.txt"
@@ -399,20 +373,7 @@ func main() {
 	case "2":
 		// Double the width of the matrix
 		matrix = doubleMap(matrix)
-		/*
 
-			// Output file
-			filename := "output.txt"
-
-			// Clear the file at the beginning (optional)
-			os.WriteFile(filename, []byte{}, 0644)
-
-			err := writeMatrixToFile(filename, matrix)
-				if err != nil {
-					fmt.Println("Error writing to file:", err)
-					return
-				}
-		*/
 		for _, direction := range sequence {
 			moveRobotBig(matrix, direction)
 		}
