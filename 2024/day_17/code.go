@@ -45,6 +45,11 @@ func (p *Printer) Print() {
 	fmt.Printf("\n") // Ensure a newline after printing
 }
 
+// Clears the buffer
+func (p *Printer) clear_buffer() {
+	p.result = []int{}
+}
+
 // Print applies special rules and maintains state
 func (p *Printer) Device_State() {
 	fmt.Printf("Register: %+v\n", A)
@@ -122,8 +127,7 @@ func combo(operand int) int {
 
 // opcode 0
 func adv(operand int) {
-	denominator := 1 << combo(operand)
-	A = int(A / denominator)
+	A = int(A >> combo(operand))
 }
 
 // opcode 1
@@ -133,7 +137,7 @@ func bxl(operand int) {
 
 // opcode 2
 func bst(operand int) {
-	B = (combo(operand) % 8) & 7
+	B = combo(operand) % 8
 }
 
 // opcode 3
@@ -156,14 +160,12 @@ func out(operand int) {
 
 // opcode 6
 func bdv(operand int) {
-	denominator := 1 << combo(operand)
-	B = int(A / denominator)
+	B = int(A >> combo(operand))
 }
 
 // opcode 7
 func cdv(operand int) {
-	denominator := 1 << combo(operand)
-	C = int(A / denominator)
+	C = int(A >> combo(operand))
 }
 
 func run_instruction(opcode, operand int) {
@@ -189,6 +191,185 @@ func run_instruction(opcode, operand int) {
 	}
 }
 
+// Solves part 1 of the challange
+func solve_program(debug bool) {
+	var temp1, temp2, temp3 int = A, B, C
+	//STDOUT.Device_State()
+	for ; INSTRUCTIONS_POINTER+1 < len(INSTRUCTIONS); INSTRUCTIONS_POINTER += 2 {
+		if debug {
+			fmt.Print("Instruction: ", INSTRUCTIONS[INSTRUCTIONS_POINTER], INSTRUCTIONS[INSTRUCTIONS_POINTER+1], "\n")
+
+		}
+		run_instruction(INSTRUCTIONS[INSTRUCTIONS_POINTER], INSTRUCTIONS[INSTRUCTIONS_POINTER+1])
+		if debug {
+			STDOUT.Device_State()
+			STDOUT.Print()
+		}
+	}
+	//STDOUT.Print()
+
+	INSTRUCTIONS_POINTER = 0
+	A = temp1
+	B = temp2
+	C = temp3
+
+}
+
+/*
+func find_size() {
+	solve_program()
+	step, direction := 100, 1 // Start with step = 100, moving forward
+
+	for len(STDOUT.result) != len(INSTRUCTIONS) {
+		adjustStep(&step, &direction, len(STDOUT.result), len(INSTRUCTIONS))
+
+		// Move A in the chosen direction
+		A += direction * step
+
+		// Re-run the program to check results
+		STDOUT.clear_buffer()
+		solve_program()
+	}
+}
+
+// adjustStep updates the step size and direction based on overshooting
+func adjustStep(step, direction *int, currentSize, targetSize int) {
+	if currentSize < targetSize { // Need to increase A
+		if *direction != 1 { // Change direction to forward
+			*direction = 1
+			*step = (*step / 2) + 1
+		} else {
+			*step *= 2 // Exponential growth when in the right direction
+		}
+	} else { // Need to decrease A
+		if *direction != -1 { // Change direction to backward
+			*direction = -1
+			*step = (*step / 2) + 1
+		} else {
+			*step *= 2
+		}
+	}
+}
+
+// Atempt at solving part 2
+func search() {
+
+	var originalA int = A
+
+	for len(STDOUT.result) == len(INSTRUCTIONS) {
+
+		STDOUT.clear_buffer()
+		solve_program()
+		matching := true
+		for i := range STDOUT.result {
+			if STDOUT.result[i] != INSTRUCTIONS[i] {
+				matching = false
+				break
+			}
+		}
+		if matching {
+			return // Found the correct value, exit
+		}
+		A += 1
+		// Check
+
+	}
+
+	A = originalA
+	STDOUT.clear_buffer()
+	solve_program()
+
+
+	for len(STDOUT.result) == len(INSTRUCTIONS) {
+		STDOUT.clear_buffer()
+		solve_program()
+		matching := true
+		for i := range STDOUT.result {
+			if STDOUT.result[i] != INSTRUCTIONS[i] {
+				matching = false
+				break
+			}
+		}
+		if matching {
+			return // Found the correct value, exit
+		}
+		A -= 1
+		// Check
+
+	}
+}
+*/
+
+func reserse_engenier() {
+	A = 1
+	var match bool
+
+	//reader := bufio.NewReader(os.Stdin)
+
+	for n := 0; n <= len(INSTRUCTIONS); {
+
+		for i := A % 8; i < 8; i++ {
+
+			match = true
+
+			//fmt.Printf("Running with value of A = %b\n", A)
+			//reader.ReadString('\n')
+
+			solve_program(false)
+
+			fmt.Print("N : ", n, "; len = ", len(STDOUT.result), STDOUT.result, "\n")
+
+			//fmt.Print(INSTRUCTIONS, "\n")
+			//fmt.Print(STDOUT.result, "\n")
+
+			for j := 0; j <= n; j++ { // Change the order of the iteration to make this a tiny bit faster
+
+				//fmt.Print("j = ", len(STDOUT.result)-j-1, "\n")
+
+				if len(STDOUT.result)-j > 0 {
+					if STDOUT.result[len(STDOUT.result)-j-1] != INSTRUCTIONS[len(INSTRUCTIONS)-j-1] {
+						match = false
+						break
+					}
+				} else {
+					break
+				}
+			}
+
+			if match {
+				//fmt.Print("Found a Match and exited.\n", "A = ", A, "\nInstructions = ", INSTRUCTIONS, "\nResult = ", STDOUT.result, "\n")
+
+				n++
+				A = A << 3
+
+				STDOUT.clear_buffer()
+
+				break
+			}
+			A++
+			STDOUT.clear_buffer()
+		}
+		if !match {
+			A--
+			//fmt.Print("Match not found.\n")
+			A = A >> 3
+			for A%8 == 7 {
+				A = A >> 3
+			}
+			A++
+			n--
+
+		}
+
+	}
+	A = A >> 3
+}
+
+// Part 2 was a tought nut to crack.
+// In my first atemtps, I was trying to brute force the correct result, but doing some math, i could see the complexety of the problem is 8^n, where n is the size of the output
+// After looking online for help, i started trying to reverse engineer the program but I lost a lof of time trying to figure out how I could possibly reverse engenier all possible programs
+// Turns out, you dont need to do that. Investigating the program further, we can do a miss match of both aproaches, reducing brute force timing to 8n, which is realy good.
+
 func main() {
 	// Example usage
 	filename := "data.txt" // actual data
@@ -199,14 +380,9 @@ func main() {
 		return
 	}
 
-	STDOUT.Device_State()
+	reserse_engenier()
 
-	for ; INSTRUCTIONS_POINTER+1 < len(INSTRUCTIONS); INSTRUCTIONS_POINTER += 2 {
-		run_instruction(INSTRUCTIONS[INSTRUCTIONS_POINTER], INSTRUCTIONS[INSTRUCTIONS_POINTER+1])
-	}
+	solve_program(false)
+	STDOUT.Device_State()
 	STDOUT.Print()
-
-	STDOUT.Device_State()
-
-	fmt.Println()
 }
