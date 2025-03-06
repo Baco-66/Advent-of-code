@@ -34,15 +34,15 @@ func (p *Printer) Store(message int, args ...interface{}) {
 // Print program output
 func (p *Printer) Print() {
 	first := true
-	for _, message := range p.result { // Assuming p.result is a slice or array
+	for _, message := range p.result {
 		if first {
 			fmt.Printf("%d", message)
-			first = false // Update first after printing the first element
+			first = false
 		} else {
 			fmt.Printf(",%d", message)
 		}
 	}
-	fmt.Printf("\n") // Ensure a newline after printing
+	fmt.Printf("\n")
 }
 
 // Clears the buffer
@@ -50,13 +50,12 @@ func (p *Printer) clear_buffer() {
 	p.result = []int{}
 }
 
-// Print applies special rules and maintains state
+// Display the Machine state
 func (p *Printer) Device_State() {
 	fmt.Printf("Register: %+v\n", A)
 	fmt.Printf("Register: %+v\n", B)
 	fmt.Printf("Register: %+v\n", C)
-	fmt.Print("Queue: ")
-	fmt.Print(INSTRUCTIONS, "\n")
+	fmt.Print("Queue: ", INSTRUCTIONS, "\n")
 }
 
 ///////////// Read and parse the data from the file /////////////
@@ -191,10 +190,11 @@ func run_instruction(opcode, operand int) {
 	}
 }
 
+////////////////////////////////////////////////////////////
+
 // Solves part 1 of the challange
 func solve_program(debug bool) {
 	var temp1, temp2, temp3 int = A, B, C
-	//STDOUT.Device_State()
 	for ; INSTRUCTIONS_POINTER+1 < len(INSTRUCTIONS); INSTRUCTIONS_POINTER += 2 {
 		if debug {
 			fmt.Print("Instruction: ", INSTRUCTIONS[INSTRUCTIONS_POINTER], INSTRUCTIONS[INSTRUCTIONS_POINTER+1], "\n")
@@ -206,7 +206,6 @@ func solve_program(debug bool) {
 			STDOUT.Print()
 		}
 	}
-	//STDOUT.Print()
 
 	INSTRUCTIONS_POINTER = 0
 	A = temp1
@@ -216,6 +215,7 @@ func solve_program(debug bool) {
 }
 
 /*
+Attempts at brute forcing the part 2
 func find_size() {
 	solve_program()
 	step, direction := 100, 1 // Start with step = 100, moving forward
@@ -300,75 +300,48 @@ func search() {
 }
 */
 
+// Part 2 was a tought nut to crack.
+// In my first atemtps, I was trying to brute force the correct result, but doing some math, i could see the complexety of the problem is 8^n, where n is the size of the output
+// After looking online for help, i started trying to reverse engineer the program but I lost a lof of time trying to figure out how I could possibly reverse engenier all possible programs
+// Turns out, you dont need to do that. Investigating the program further, we can do a miss match of both aproaches, reducing brute force timing to 8n, which is realy good.
+
 func reserse_engenier() {
 	A = 1
 	var match bool
 
-	//reader := bufio.NewReader(os.Stdin)
-
 	for n := 0; n <= len(INSTRUCTIONS); {
-
+		// Iterate over the 3 least significant bits
 		for i := A % 8; i < 8; i++ {
-
 			match = true
-
-			//fmt.Printf("Running with value of A = %b\n", A)
-			//reader.ReadString('\n')
-
 			solve_program(false)
-
-			fmt.Print("N : ", n, "; len = ", len(STDOUT.result), STDOUT.result, "\n")
-
-			//fmt.Print(INSTRUCTIONS, "\n")
-			//fmt.Print(STDOUT.result, "\n")
-
-			for j := 0; j <= n; j++ { // Change the order of the iteration to make this a tiny bit faster
-
-				//fmt.Print("j = ", len(STDOUT.result)-j-1, "\n")
-
+			for j := n; j >= 0; j-- {
 				if len(STDOUT.result)-j > 0 {
 					if STDOUT.result[len(STDOUT.result)-j-1] != INSTRUCTIONS[len(INSTRUCTIONS)-j-1] {
 						match = false
 						break
 					}
-				} else {
-					break
 				}
 			}
-
-			if match {
-				//fmt.Print("Found a Match and exited.\n", "A = ", A, "\nInstructions = ", INSTRUCTIONS, "\nResult = ", STDOUT.result, "\n")
-
+			STDOUT.clear_buffer()
+			if match { // Move to the next iteration level
 				n++
-				A = A << 3
-
-				STDOUT.clear_buffer()
-
+				A <<= 3
 				break
 			}
 			A++
-			STDOUT.clear_buffer()
 		}
-		if !match {
+		if !match { // If no match, adjust A to backtrack and try again
 			A--
-			//fmt.Print("Match not found.\n")
-			A = A >> 3
-			for A%8 == 7 {
-				A = A >> 3
+			A >>= 3
+			for A%8 == 7 { // Ensure A can be modified without affecting the next three bits
+				A >>= 3
 			}
 			A++
 			n--
-
 		}
-
 	}
-	A = A >> 3
+	A >>= 3 // Final adjustment
 }
-
-// Part 2 was a tought nut to crack.
-// In my first atemtps, I was trying to brute force the correct result, but doing some math, i could see the complexety of the problem is 8^n, where n is the size of the output
-// After looking online for help, i started trying to reverse engineer the program but I lost a lof of time trying to figure out how I could possibly reverse engenier all possible programs
-// Turns out, you dont need to do that. Investigating the program further, we can do a miss match of both aproaches, reducing brute force timing to 8n, which is realy good.
 
 func main() {
 	// Example usage
